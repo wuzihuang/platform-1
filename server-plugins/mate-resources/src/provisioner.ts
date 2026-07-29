@@ -1,9 +1,19 @@
-import contact, { AvatarType } from '@hcengineering/contact'
+import contact, {
+  AvatarType,
+  combineName,
+  type Employee,
+  type Person,
+  type SocialIdentity,
+  type SocialIdentityRef
+} from '@hcengineering/contact'
 import core, {
   AccountRole,
   buildSocialIdString,
   type AccountUuid,
+  type Data,
+  generateId,
   type PersonUuid,
+  type Ref,
   SocialIdType,
   systemAccountUuid,
   type Tx,
@@ -27,6 +37,14 @@ export interface MateIdentitySeed {
   avatarColor?: string
   tokenRef: string
 }
+
+interface ProvisionedAccount {
+  account: AccountUuid
+  socialId: SocialIdentityRef
+}
+
+const MATE_ACCOUNT_TOKEN_TTL_SECONDS = 15 * 60
+const MATE_PROVISIONER_SERVICE = 'mate-provisioner'
 
 function readSeeds (control: TriggerControl): MateIdentitySeed[] {
   const value = getMetadata(serverMate.metadata.IdentitySeeds) ?? ''
@@ -52,7 +70,7 @@ function readSeeds (control: TriggerControl): MateIdentitySeed[] {
 
 async function confirmAccount (account: PersonUuid, email: string): Promise<void> {
   const client = getAccountClient(
-    generateToken(account, undefined, { service: 'mate-provisioner', confirmEmail: email })
+    generateToken(account, undefined, { service: MATE_PROVISIONER_SERVICE, confirmEmail: email })
   )
   try {
     await client.confirm()
@@ -61,24 +79,118 @@ async function confirmAccount (account: PersonUuid, email: string): Promise<void
   }
 }
 
-async function ensureAccount (seed: MateIdentitySeed, workspace: WorkspaceUuid): Promise<AccountUuid | undefined> {
-  const systemToken = generateToken(systemAccountUuid, undefined, { service: 'mate-provisioner' })
+async function ensureAccount (seed: MateIdentitySeed, workspace: WorkspaceUuid): Promise<ProvisionedAccount | undefined> {
+  const systemToken = generateToken(systemAccountUuid, undefined, { service: MATE_PROVISIONER_SERVICE })
   const accountClient = getAccountClient(systemToken)
   const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
   let personUuid = await accountClient.findPersonBySocialKey(socialKey)
+  let socialId = await accountClient.findSocialIdBySocialKey(socialKey)
 
   if (personUuid === undefined) {
     const signup = await accountClient.signUp(seed.email, seed.password, seed.firstName, seed.lastName)
     personUuid = signup?.account
+    socialId = signup?.socialId
   }
-  if (personUuid === undefined) return undefined
+  if (personUuid === undefined || socialId === undefined) return undefined
 
   await confirmAccount(personUuid, seed.email)
   await accountClient.assignWorkspace(seed.email, workspace, AccountRole.User)
-  return personUuid as AccountUuid
+  return { account: personUuid as AccountUuid, socialId: socialId as SocialIdentityRef }
 }
 
-async function ensureIdentityDoc (seed: MateIdentitySeed, account: AccountUuid, control: TriggerControl): Promise<Tx[]> {
+async function ensureLocalIdentity (
+  seed: MateIdentitySeed,
+  account: AccountUuid,
+  socialIdRef: SocialIdentityRef,
+  control: TriggerControl
+): Promise<{ txes: Tx[], person?: Ref<Person>, socialId?: SocialIdentityRef }> {
+  const txes: Tx[] = []
+  const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
+  const localPersonByUuid = (
+    await control.findAll(control.ctx, contact.class.Person, { personUuid: account as PersonUuid }, { limit: 1 })
+  )[0]
+  const localSocialId = (
+    await control.findAll(control.ctx, contact.class.SocialIdentity, { key: socialKey }, { limit: 1 })
+  )[0]
+  let person = localPersonByUuid
+
+  if (person === undefined && localSocialId !== undefined) {
+    person = (
+      await control.findAll(control.ctx, contact.class.Person, { _id: localSocialId.attachedTo }, { limit: 1 })
+    )[0]
+  }
+
+  const name = combineName(seed.firstName, seed.lastName)
+  const avatarProps = { color: seed.avatarColor ?? (seed.role === 'first' ? '#6C5CE7' : '#0984E3') }
+  const personData: Data<Person> = {
+    name,
+    city: '',
+    avatarType: AvatarType.COLOR,
+    avatarProps,
+    personUuid: account as PersonUuid
+  }
+  const personRef = person?._id ?? generateId<Person>()
+
+  if (person === undefined) {
+    txes.push(control.txFactory.createTxCreateDoc(contact.class.Person, contact.space.Contacts, personData, personRef))
+  } else {
+    txes.push(control.txFactory.createTxUpdateDoc(contact.class.Person, person.space, person._id, personData))
+  }
+
+  if (localSocialId === undefined) {
+    txes.push(
+      control.txFactory.createTxCollectionCUD(
+        contact.class.Person,
+        personRef,
+        contact.space.Contacts,
+        'socialIds',
+        control.txFactory.createTxCreateDoc(
+          contact.class.SocialIdentity,
+          contact.space.Contacts,
+          {
+            attachedTo: personRef,
+            attachedToClass: contact.class.Person,
+            collection: 'socialIds',
+            type: SocialIdType.EMAIL,
+            value: seed.email,
+            key: socialKey,
+            isDeleted: false
+          } as Data<SocialIdentity>,
+          socialIdRef
+        )
+      )
+    )
+  }
+
+  const employee = (
+    await control.findAll(control.ctx, contact.mixin.Employee, { _id: personRef as Ref<Employee> }, { limit: 1 })
+  )[0]
+  const employeeRole: Employee['role'] = 'USER'
+  if (employee === undefined || employee.active !== true || employee.role !== employeeRole) {
+    txes.push(
+      control.txFactory.createTxMixin(personRef, contact.class.Person, contact.space.Contacts, contact.mixin.Employee, {
+        active: true,
+        role: employeeRole
+      })
+    )
+  }
+
+  return { txes, person: personRef, socialId: localSocialId?._id ?? socialIdRef }
+}
+
+function generateMateAccountToken (account: AccountUuid, workspace: WorkspaceUuid): string {
+  const now = Math.floor(Date.now() / 1000)
+  return generateToken(account, workspace, { service: 'mate' }, undefined, {
+    nbf: now - 30,
+    exp: now + MATE_ACCOUNT_TOKEN_TTL_SECONDS
+  })
+}
+
+async function ensureIdentityDoc (
+  seed: MateIdentitySeed,
+  provisioned: ProvisionedAccount,
+  control: TriggerControl
+): Promise<Tx[]> {
   const txes: Tx[] = []
   const mateDoc = (
     await control.findAll(control.ctx, mate.class.Mate, { _id: seed.mateId as Mate['_id'] }, { limit: 1 })
@@ -88,20 +200,16 @@ async function ensureIdentityDoc (seed: MateIdentitySeed, account: AccountUuid, 
     return txes
   }
 
-  const person = (
-    await control.findAll(control.ctx, contact.class.Person, { personUuid: account as PersonUuid }, { limit: 1 })
-  )[0]
-  const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
-  const socialId = (
-    await control.findAll(control.ctx, contact.class.SocialIdentity, { key: socialKey }, { limit: 1 })
-  )[0]
+  const localIdentity = await ensureLocalIdentity(seed, provisioned.account, provisioned.socialId, control)
+  txes.push(...localIdentity.txes)
+
   const identity = (await control.findAll(control.ctx, mate.class.MateIdentity, { mate: mateDoc._id }, { limit: 1 }))[0]
 
   const identityData = {
     mate: mateDoc._id,
-    account,
-    person: person?._id,
-    socialId: socialId?._id,
+    account: provisioned.account,
+    person: localIdentity.person,
+    socialId: localIdentity.socialId,
     tokenRef: seed.tokenRef,
     provisionedOn: Date.now()
   }
@@ -118,14 +226,6 @@ async function ensureIdentityDoc (seed: MateIdentitySeed, account: AccountUuid, 
       control.txFactory.createTxUpdateDoc(mate.class.Mate, mateDoc.space, mateDoc._id, { identity: identityId })
     )
   }
-  if (person !== undefined) {
-    txes.push(
-      control.txFactory.createTxUpdateDoc(contact.class.Person, person.space, person._id, {
-        avatarType: AvatarType.COLOR,
-        avatarProps: { color: seed.avatarColor ?? (seed.role === 'first' ? '#6C5CE7' : '#0984E3') }
-      })
-    )
-  }
 
   await postOrchestrator(
     '/identity/provisioned',
@@ -133,11 +233,11 @@ async function ensureIdentityDoc (seed: MateIdentitySeed, account: AccountUuid, 
       type: 'identity.provisioned',
       mateId: mateDoc._id,
       role: seed.role,
-      accountId: account,
-      personId: person?._id,
-      socialId: socialId?._id,
+      accountId: provisioned.account,
+      personId: localIdentity.person,
+      socialId: localIdentity.socialId,
       tokenRef: seed.tokenRef,
-      accountToken: generateToken(account, control.workspace.uuid, { service: 'mate' })
+      accountToken: generateMateAccountToken(provisioned.account, control.workspace.uuid)
     },
     control
   )
@@ -148,12 +248,12 @@ export async function provisionMateIdentities (control: TriggerControl): Promise
   const txes: Tx[] = []
   for (const seed of readSeeds(control)) {
     try {
-      const account = await ensureAccount(seed, control.workspace.uuid)
-      if (account === undefined) {
+      const provisioned = await ensureAccount(seed, control.workspace.uuid)
+      if (provisioned === undefined) {
         control.ctx.error('Mate account provisioning returned no account', { mateId: seed.mateId })
         continue
       }
-      txes.push(...(await ensureIdentityDoc(seed, account, control)))
+      txes.push(...(await ensureIdentityDoc(seed, provisioned, control)))
     } catch (error) {
       control.ctx.error('MateIdentityProvisioner failed', { mateId: seed.mateId, error })
     }

@@ -533,7 +533,7 @@ export async function assignWorkspace (
 ): Promise<void> {
   const { email, workspaceUuid, role } = params
   const { extra } = decodeTokenVerbose(ctx, token)
-  if (!['aibot', 'tool', 'workspace'].includes(extra?.service)) {
+  if (!['aibot', 'tool', 'workspace', 'mate-provisioner'].includes(extra?.service)) {
     throw new PlatformError(new Status(Severity.ERROR, platform.status.Forbidden, {}))
   }
 
@@ -999,7 +999,7 @@ export async function findPersonBySocialKey (
 
   const { extra } = decodeTokenVerbose(ctx, token)
 
-  verifyAllowedServices(['tool', 'workspace', 'aibot', ...integrationServices], extra)
+  verifyAllowedServices(['tool', 'workspace', 'aibot', 'mate-provisioner', ...integrationServices], extra)
 
   const socialId = await db.socialId.findOne({ key: socialString })
 

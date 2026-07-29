@@ -45,6 +45,7 @@
   let terminalHost: HTMLDivElement
   let terminal: Terminal | undefined
   let socket: WebSocket | undefined
+  let terminalInputDisposable: { dispose: () => void } | undefined
   let terminalMode = 'agent'
   let loading = true
 
@@ -86,6 +87,8 @@
   async function attachTerminal (): Promise<void> {
     if (selectedRunId === '' || terminal === undefined) return
     socket?.close()
+    terminalInputDisposable?.dispose()
+    terminalInputDisposable = undefined
     const ticket = await api<{ ticket: string }>(`/runs/${encodeURIComponent(selectedRunId)}/terminal/ticket`, {
       method: 'POST',
       body: '{}'
@@ -99,7 +102,7 @@
     }
     socket.onopen = () => terminal?.writeln('\r\n\x1b[32mAttached to runner PTY\x1b[0m')
     socket.onclose = () => terminal?.writeln('\r\n\x1b[90mTerminal detached\x1b[0m')
-    terminal.onData((data) => {
+    terminalInputDisposable = terminal.onData((data) => {
       if (terminalMode === 'human' && socket?.readyState === WebSocket.OPEN) socket.send(data)
     })
   }
@@ -132,6 +135,8 @@
   })
 
   onDestroy(() => {
+    terminalInputDisposable?.dispose()
+    terminalInputDisposable = undefined
     socket?.close()
     terminal?.dispose()
   })
