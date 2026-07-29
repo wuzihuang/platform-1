@@ -32116,6 +32116,9 @@ importers:
       '@hcengineering/server-core':
         specifier: workspace:^0.7.19
         version: link:../../foundations/server/packages/core
+      '@hcengineering/server-mate-resources':
+        specifier: workspace:^0.7.0
+        version: link:../mate-resources
       '@hcengineering/server-notification-resources':
         specifier: workspace:^0.7.0
         version: link:../notification-resources
