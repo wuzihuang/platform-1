@@ -84,7 +84,7 @@ async function ensureAccount (seed: MateIdentitySeed, workspace: WorkspaceUuid):
   const systemToken = generateToken(systemAccountUuid, undefined, { service: MATE_PROVISIONER_SERVICE })
   const accountClient = getAccountClient(systemToken)
   const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
-  let personUuid = await accountClient.findPersonBySocialKey(socialKey)
+  let personUuid = await accountClient.findPersonBySocialKey(socialKey, true)
 
   if (personUuid === undefined) {
     const signup = await accountClient.signUp(seed.email, seed.password, seed.firstName, seed.lastName)
