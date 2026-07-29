@@ -18,6 +18,7 @@ import core, { coreId, type Data, type PluginConfiguration, type Ref, type Tx, t
 import { Builder } from '@hcengineering/model'
 import { activityId, createModel as activityModel } from '@hcengineering/model-activity'
 import { aiBotId, createModel as aiBotModel } from '@hcengineering/model-ai-bot'
+import { mateId, createModel as mateModel } from '@hcengineering/model-mate'
 import { attachmentId, createModel as attachmentModel } from '@hcengineering/model-attachment'
 import bitrix, { bitrixId, createModel as bitrixModel } from '@hcengineering/model-bitrix'
 import board, { boardId, createModel as boardModel } from '@hcengineering/model-board'
@@ -44,6 +45,7 @@ import recruit, { recruitId, createModel as recruitModel } from '@hcengineering/
 import { requestId, createModel as requestModel } from '@hcengineering/model-request'
 import { serverActivityId, createModel as serverActivityModel } from '@hcengineering/model-server-activity'
 import { serverAiBotId, createModel as serverAiBotModel } from '@hcengineering/model-server-ai-bot'
+import { serverMateId, createModel as serverMateModel } from '@hcengineering/model-server-mate'
 import { serverAttachmentId, createModel as serverAttachmentModel } from '@hcengineering/model-server-attachment'
 import { serverCalendarId, createModel as serverCalendarModel } from '@hcengineering/model-server-calendar'
 import { serverCardId, createModel as serverCardModel } from '@hcengineering/model-server-card'
@@ -401,6 +403,7 @@ export default function buildModel (): Builder {
     [printModel, printId],
     [exportModel, exportId],
     [aiBotModel, aiBotId],
+    [mateModel, mateId],
     [
       processModel,
       processId,
@@ -567,6 +570,7 @@ export default function buildModel (): Builder {
     [serverTrainingModel, serverTrainingId],
     [serverDocumentsModel, serverDocumentsId],
     [serverAiBotModel, serverAiBotId],
+    [serverMateModel, serverMateId],
     [serverProcessModel, serverProcessId]
   ]
 

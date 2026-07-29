@@ -25,6 +25,7 @@ import {
 
 import { activityId } from '@hcengineering/activity'
 import aiBot, { aiBotId } from '@hcengineering/ai-bot'
+import mate, { mateId } from '@hcengineering/mate'
 import { attachmentId } from '@hcengineering/attachment'
 import { bitrixId } from '@hcengineering/bitrix'
 import { boardId } from '@hcengineering/board'
@@ -145,6 +146,7 @@ import '@hcengineering/billing-assets'
 import '@hcengineering/huly-mail-assets'
 import '@hcengineering/ai-assistant-assets'
 import '@hcengineering/rating-assets'
+import '@hcengineering/mate-assets'
 
 import analyticsCollector, { analyticsCollectorId } from '@hcengineering/analytics-collector'
 import { coreId } from '@hcengineering/core'
@@ -308,6 +310,13 @@ function configureI18n (): void {
     async (lang: string) => await import(`@hcengineering/ai-assistant-assets/lang/${lang}.json`)
   )
   addStringsLoader(ratingId, async (lang: string) => await import(`@hcengineering/rating-assets/lang/${lang}.json`))
+  addStringsLoader(
+    mateId,
+    async (lang: string) =>
+      lang === 'zh'
+        ? await import('@hcengineering/mate-assets/lang/zh.json')
+        : await import('@hcengineering/mate-assets/lang/en.json')
+  )
 }
 
 export class PlatformBranding {
@@ -397,6 +406,8 @@ export async function configurePlatform (onWorkbenchConnect?: () => Promise<void
   setMetadata(uiPlugin.metadata.DefaultApplication, login.component.LoginApp)
   setMetadata(analyticsCollector.metadata.EndpointURL, config.ANALYTICS_COLLECTOR_URL)
   setMetadata(aiBot.metadata.EndpointURL, config.AI_URL)
+  setMetadata(mate.metadata.OrchestratorURL, config.MATE_ORCHESTRATOR_URL)
+  setMetadata(mate.metadata.OrchestratorWebSocketURL, config.MATE_ORCHESTRATOR_WS_URL)
   setMetadata(presence.metadata.PresenceUrl, config.PRESENCE_URL ?? '')
   setMetadata(exportPlugin.metadata.ExportUrl, config.EXPORT_URL ?? '')
 
@@ -455,6 +466,7 @@ export async function configurePlatform (onWorkbenchConnect?: () => Promise<void
   addLocation(calendarId, async () => await import('@hcengineering/calendar-resources'))
   addLocation(analyticsCollectorId, async () => await import('@hcengineering/analytics-collector-resources'))
   addLocation(aiBotId, async () => await import('@hcengineering/ai-bot-resources'))
+  addLocation(mateId, async () => await import('@hcengineering/mate-resources'))
 
   addLocation(trackerId, async () => await import('@hcengineering/tracker-resources'))
   addLocation(boardId, async () => await import('@hcengineering/board-resources'))

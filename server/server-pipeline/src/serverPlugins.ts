@@ -28,6 +28,7 @@ import { serverTrackerId } from '@hcengineering/server-tracker'
 import { serverTrainingId } from '@hcengineering/server-training'
 import { serverViewId } from '@hcengineering/server-view'
 import { serverAiBotId } from '@hcengineering/server-ai-bot'
+import { serverMateId } from '@hcengineering/server-mate'
 import { serverProcessId } from '@hcengineering/server-process'
 
 export function registerServerPlugins (): void {
@@ -60,5 +61,6 @@ export function registerServerPlugins (): void {
   addLocation(serverTrainingId, () => import('@hcengineering/server-training-resources'))
   addLocation(serverGithubId, () => import('@hcengineering/server-github-resources'))
   addLocation(serverAiBotId, () => import('@hcengineering/server-ai-bot-resources'))
+  addLocation(serverMateId, () => import('@hcengineering/server-mate-resources'))
   addLocation(serverProcessId, () => import('@hcengineering/server-process-resources'))
 }

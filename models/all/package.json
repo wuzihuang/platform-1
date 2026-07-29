@@ -118,6 +118,8 @@
     "@hcengineering/model-server-controlled-documents": "workspace:^0.7.0",
     "@hcengineering/model-analytics-collector": "workspace:^0.7.0",
     "@hcengineering/model-server-ai-bot": "workspace:^0.7.0",
+    "@hcengineering/model-mate": "workspace:^0.7.0",
+    "@hcengineering/model-server-mate": "workspace:^0.7.0",
     "@hcengineering/model-ai-bot": "workspace:^0.7.0",
     "@hcengineering/model-media": "workspace:^0.7.0",
     "@hcengineering/model-recorder": "workspace:^0.7.0",

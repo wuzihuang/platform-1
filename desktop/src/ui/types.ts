@@ -22,6 +22,8 @@ import { IpcRendererEvent } from 'electron'
 export interface Config {
   ACCOUNTS_URL: string
   AI_URL?: string
+  MATE_ORCHESTRATOR_URL?: string
+  MATE_ORCHESTRATOR_WS_URL?: string
   ANALYTICS_COLLECTOR_URL?: string
   BRANDING_URL?: string
   CALENDAR_URL: string
