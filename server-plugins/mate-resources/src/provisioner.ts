@@ -14,6 +14,7 @@ import core, {
   generateId,
   type PersonUuid,
   type Ref,
+  type SocialId,
   SocialIdType,
   systemAccountUuid,
   type Tx,
@@ -40,7 +41,7 @@ export interface MateIdentitySeed {
 
 interface ProvisionedAccount {
   account: AccountUuid
-  socialId: SocialIdentityRef
+  socialId: SocialId
 }
 
 const MATE_ACCOUNT_TOKEN_TTL_SECONDS = 15 * 60
@@ -84,35 +85,46 @@ async function ensureAccount (seed: MateIdentitySeed, workspace: WorkspaceUuid):
   const accountClient = getAccountClient(systemToken)
   const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
   let personUuid = await accountClient.findPersonBySocialKey(socialKey)
-  let socialId = await accountClient.findSocialIdBySocialKey(socialKey)
 
   if (personUuid === undefined) {
     const signup = await accountClient.signUp(seed.email, seed.password, seed.firstName, seed.lastName)
     personUuid = signup?.account
-    socialId = signup?.socialId
   }
-  if (personUuid === undefined || socialId === undefined) return undefined
+  if (personUuid === undefined) return undefined
 
   await confirmAccount(personUuid, seed.email)
   await accountClient.assignWorkspace(seed.email, workspace, AccountRole.User)
-  return { account: personUuid as AccountUuid, socialId: socialId as SocialIdentityRef }
+
+  const socialId = await accountClient.findFullSocialIdBySocialKey(socialKey)
+  if (socialId === undefined || socialId.personUuid !== personUuid) return undefined
+
+  return { account: personUuid as AccountUuid, socialId }
 }
 
 async function ensureLocalIdentity (
   seed: MateIdentitySeed,
   account: AccountUuid,
-  socialIdRef: SocialIdentityRef,
+  accountSocialId: SocialId,
   control: TriggerControl
 ): Promise<{ txes: Tx[], person?: Ref<Person>, socialId?: SocialIdentityRef }> {
   const txes: Tx[] = []
-  const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
+  const socialIdRef = accountSocialId._id as SocialIdentityRef
   const localPersonByUuid = (
     await control.findAll(control.ctx, contact.class.Person, { personUuid: account as PersonUuid }, { limit: 1 })
   )[0]
-  const localSocialId = (
-    await control.findAll(control.ctx, contact.class.SocialIdentity, { key: socialKey }, { limit: 1 })
+  const localSocialIdByRef = (
+    await control.findAll(control.ctx, contact.class.SocialIdentity, { _id: socialIdRef }, { limit: 1 })
   )[0]
+  const localSocialIds = await control.findAll(control.ctx, contact.class.SocialIdentity, { key: accountSocialId.key })
+  const staleSocialIds = localSocialIds.filter((socialId) => socialId._id !== socialIdRef)
+  const localSocialId = staleSocialIds[0]
   let person = localPersonByUuid
+
+  if (person === undefined && localSocialIdByRef !== undefined) {
+    person = (
+      await control.findAll(control.ctx, contact.class.Person, { _id: localSocialIdByRef.attachedTo }, { limit: 1 })
+    )[0]
+  }
 
   if (person === undefined && localSocialId !== undefined) {
     person = (
@@ -137,7 +149,19 @@ async function ensureLocalIdentity (
     txes.push(control.txFactory.createTxUpdateDoc(contact.class.Person, person.space, person._id, personData))
   }
 
-  if (localSocialId === undefined) {
+  const socialIdentityData: Data<SocialIdentity> = {
+    attachedTo: personRef,
+    attachedToClass: contact.class.Person,
+    collection: 'socialIds',
+    type: accountSocialId.type,
+    value: accountSocialId.value,
+    key: accountSocialId.key,
+    displayValue: accountSocialId.displayValue,
+    verifiedOn: accountSocialId.verifiedOn,
+    isDeleted: accountSocialId.isDeleted ?? false
+  }
+
+  if (localSocialIdByRef === undefined) {
     txes.push(
       control.txFactory.createTxCollectionCUD(
         contact.class.Person,
@@ -147,17 +171,29 @@ async function ensureLocalIdentity (
         control.txFactory.createTxCreateDoc(
           contact.class.SocialIdentity,
           contact.space.Contacts,
-          {
-            attachedTo: personRef,
-            attachedToClass: contact.class.Person,
-            collection: 'socialIds',
-            type: SocialIdType.EMAIL,
-            value: seed.email,
-            key: socialKey,
-            isDeleted: false
-          } as Data<SocialIdentity>,
+          socialIdentityData,
           socialIdRef
         )
+      )
+    )
+  } else {
+    txes.push(
+      control.txFactory.createTxUpdateDoc(
+        contact.class.SocialIdentity,
+        localSocialIdByRef.space,
+        localSocialIdByRef._id,
+        socialIdentityData
+      )
+    )
+  }
+
+  for (const staleSocialId of staleSocialIds) {
+    txes.push(
+      control.txFactory.createTxUpdateDoc(
+        contact.class.SocialIdentity,
+        staleSocialId.space,
+        staleSocialId._id,
+        { isDeleted: true, key: `${staleSocialId.key}:replaced:${String(staleSocialId._id)}` }
       )
     )
   }
@@ -175,7 +211,7 @@ async function ensureLocalIdentity (
     )
   }
 
-  return { txes, person: personRef, socialId: localSocialId?._id ?? socialIdRef }
+  return { txes, person: personRef, socialId: socialIdRef }
 }
 
 function generateMateAccountToken (account: AccountUuid, workspace: WorkspaceUuid): string {
