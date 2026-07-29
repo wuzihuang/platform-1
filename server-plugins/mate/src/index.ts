@@ -13,6 +13,7 @@ export default plugin(serverMateId, {
   trigger: {
     ProvisionMateIdentities: '' as Resource<TriggerFunc>,
     RouteMateChat: '' as Resource<TriggerFunc>,
-    RouteMateMention: '' as Resource<TriggerFunc>
+    RouteMateMention: '' as Resource<TriggerFunc>,
+    RouteMateUserMention: '' as Resource<TriggerFunc>
   }
 })

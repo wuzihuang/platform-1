@@ -29,4 +29,12 @@ export function createModel (builder: Builder): void {
     },
     isAsync: true
   })
+  builder.createDoc(serverCore.class.Trigger, core.space.Model, {
+    trigger: serverMate.trigger.RouteMateUserMention,
+    txMatch: {
+      _class: core.class.TxCreateDoc,
+      objectClass: activity.class.UserMentionInfo
+    },
+    isAsync: true
+  })
 }

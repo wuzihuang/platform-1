@@ -1,4 +1,4 @@
-import type { ActivityReference } from '@hcengineering/activity'
+import type { ActivityReference, UserMentionInfo } from '@hcengineering/activity'
 import chunter, { type ChatMessage, type DirectMessage, type ThreadMessage } from '@hcengineering/chunter'
 import contact from '@hcengineering/contact'
 import { type AccountUuid, type Doc, type PersonId, type Tx, type TxCreateDoc, TxProcessor } from '@hcengineering/core'
@@ -90,6 +90,33 @@ async function RouteMateMention (originTxs: TxCreateDoc<ActivityReference>[], co
   return []
 }
 
+async function RouteMateUserMention (originTxs: TxCreateDoc<UserMentionInfo>[], control: TriggerControl): Promise<Tx[]> {
+  if (!hasMateEndpoint()) return []
+  const identities = await mateIdentities(control)
+  const selfIds = await selfSocialIds(identities, control)
+
+  for (const tx of originTxs) {
+    const mention = TxProcessor.createDoc2Doc(tx)
+    const author = mention.createdBy ?? mention.modifiedBy
+    if (selfIds.has(author)) continue
+    const addressed = identities.filter((identity) => identity.person === mention.user)
+    if (addressed.length !== 1) continue
+
+    const event: HulyMentionEvent = {
+      type: 'huly.mention',
+      eventId: `huly:${control.workspace.uuid}:mention:${mention._id}`,
+      sourceId: String(mention.attachedTo),
+      sourceClass: String(mention.attachedToClass),
+      createdBy: String(author),
+      mateId: String(addressed[0].mate),
+      text: mention.content,
+      occurredAt: new Date(mention.createdOn ?? mention.modifiedOn).toISOString()
+    }
+    await postOrchestrator('/events', event, control)
+  }
+  return []
+}
+
 async function ProvisionMateIdentities (_txs: Tx[], control: TriggerControl): Promise<Tx[]> {
   return await provisionMateIdentities(control)
 }
@@ -99,6 +126,7 @@ export default async () => ({
   trigger: {
     ProvisionMateIdentities,
     RouteMateChat,
-    RouteMateMention
+    RouteMateMention,
+    RouteMateUserMention
   }
 })
