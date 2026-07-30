@@ -39,6 +39,7 @@ import { inboxId, inboxOperation } from '@hcengineering/model-inbox'
 import { inventoryOperation } from '@hcengineering/model-inventory'
 import { leadOperation } from '@hcengineering/model-lead'
 import { loveId, loveOperation } from '@hcengineering/model-love'
+import { mateId, mateOperation } from '@hcengineering/model-mate'
 import { notificationOperation } from '@hcengineering/model-notification'
 import { preferenceOperation } from '@hcengineering/model-preference'
 import { processId, processOperation } from '@hcengineering/model-process'
@@ -108,6 +109,7 @@ export const migrateOperations: [string, MigrateOperation][] = [
   ['testManagement', testManagementOperation],
   ['survey', surveyOperation],
   [aiBotId, aiBotOperation],
+  [mateId, mateOperation],
   [chatId, chatOperation],
   [inboxId, inboxOperation],
   [processId, processOperation],

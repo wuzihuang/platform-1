@@ -26,6 +26,7 @@ import { getAccountClient } from '@hcengineering/server-client'
 import type { TriggerControl } from '@hcengineering/server-core'
 import serverMate from '@hcengineering/server-mate'
 import { generateToken } from '@hcengineering/server-token'
+import { createHash } from 'node:crypto'
 import { postOrchestrator } from './transport'
 
 export interface MateIdentitySeed {
@@ -49,9 +50,36 @@ const MATE_PROVISIONER_SERVICE = 'mate-provisioner'
 
 function readSeeds (control: TriggerControl): MateIdentitySeed[] {
   const value = getMetadata(serverMate.metadata.IdentitySeeds) ?? ''
-  if (value === '') {
-    control.ctx.warn('Mate identity provisioning is disabled: MATE_IDENTITY_SEEDS is empty')
-    return []
+  if (value === '' || value === '[]') {
+    const relaySecret = getMetadata(serverMate.metadata.OrchestratorSecret) ?? ''
+    if (relaySecret === '') {
+      control.ctx.error('Default Mate provisioning requires MATE_ORCHESTRATOR_SECRET')
+      return []
+    }
+    const password = (role: MateRole): string =>
+      createHash('sha256').update(`openmates-default-identity:${relaySecret}:${role}`).digest('hex')
+    return [
+      {
+        mateId: String(mate.ids.FirstMate),
+        role: 'first',
+        email: 'first-mate@openmates.local',
+        password: password('first'),
+        firstName: 'First',
+        lastName: 'Mate',
+        avatarColor: '#6C5CE7',
+        tokenRef: 'vault://mate/first'
+      },
+      {
+        mateId: String(mate.ids.SecondMate),
+        role: 'second',
+        email: 'second-mate@openmates.local',
+        password: password('second'),
+        firstName: 'Second',
+        lastName: 'Mate',
+        avatarColor: '#0984E3',
+        tokenRef: 'vault://mate/second'
+      }
+    ]
   }
   try {
     const seeds = JSON.parse(value) as MateIdentitySeed[]
@@ -269,6 +297,7 @@ async function ensureIdentityDoc (
     {
       type: 'identity.provisioned',
       mateId: mateDoc._id,
+      workspaceId: control.workspace.uuid,
       role: seed.role,
       accountId: provisioned.account,
       personId: localIdentity.person,

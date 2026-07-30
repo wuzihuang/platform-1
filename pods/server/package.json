@@ -59,6 +59,7 @@
     "@types/express": "^4.17.13"
   },
   "dependencies": {
+    "@hcengineering/chunter": "workspace:^0.7.0",
     "@hcengineering/analytics": "workspace:^0.7.19",
     "@hcengineering/analytics-service": "workspace:^0.7.19",
     "@hcengineering/communication-server": "workspace:^0.7.12",
@@ -86,6 +87,7 @@
     "@hcengineering/server-telegram": "workspace:^0.7.0",
     "@hcengineering/server-token": "workspace:^0.7.18",
     "@hcengineering/server-card": "workspace:^0.7.0",
+    "@hcengineering/server-client": "workspace:^0.7.18",
     "utf-8-validate": "^6.0.4",
     "bufferutil": "^4.0.8",
     "msgpackr": "^1.11.2",
