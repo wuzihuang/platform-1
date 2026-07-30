@@ -48,6 +48,11 @@ The platform sends authenticated JSON to:
 - `POST /events` for `mate.chat` and `huly.mention` events. `eventId` and the
   `Idempotency-Key` header are stable across retries.
 - `GET /bootstrap` and `GET /runs/:runId/runtime` for widget state.
+- `GET /v1/harnesses/detect` for a fresh runner-plane executable probe. The
+  settings selector never advertises static fallback harnesses.
+- `GET /v1/oauth/providers`, `POST /v1/oauth/sessions`, and
+  `GET /v1/oauth/sessions/:id` for official browser/device login. OAuth
+  credentials remain in the Runner vault; Huly stores only `credentialRef`.
 - `POST /runs/:runId/terminal/ticket` for a single-use terminal ticket.
 - `WS /terminal?runId=…&ticket=…` for runner PTY transport.
 - `POST /runs/:runId/terminal/control` for bounded `takeover` and `release`
@@ -68,7 +73,10 @@ Firstmate, and harness execution remain in the Runner.
    run starts. Messages authored by either Mate must not create another run.
 5. Open Settings → AI Teammates, then open Agent Runtime. Confirm it appears
    only in the right Workbench sidebar.
-6. Select a run and check Terminal ticket attach/takeover/release, structured
+6. Confirm the Harness list contains only executable probes (or the
+   `未检测到 harness` retry state), then connect First Mate and Second Mate with
+   the official login button and verify Huly stores only `vault://` references.
+7. Select a run and check Terminal ticket attach/takeover/release, structured
    Agent Console events, Logs, and Git Diff rendered by Huly's
    `FileDiffView`.
 
