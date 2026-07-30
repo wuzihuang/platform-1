@@ -132,6 +132,52 @@ async function ensureAccount (
   return { account: personUuid as AccountUuid, socialId }
 }
 
+async function existingAccount (
+  seed: MateIdentitySeed,
+  control: TriggerControl
+): Promise<ProvisionedAccount | undefined> {
+  const mateDoc = (
+    await control.findAll(control.ctx, mate.class.Mate, { _id: seed.mateId as Mate['_id'] }, { limit: 1 })
+  )[0]
+  if (mateDoc === undefined) return undefined
+
+  const identity = (
+    await control.findAll(control.ctx, mate.class.MateIdentity, { mate: mateDoc._id }, { limit: 1 })
+  )[0]
+  if (identity?.account === undefined || identity.socialId === undefined) return undefined
+
+  const socialId = (
+    await control.findAll(
+      control.ctx,
+      contact.class.SocialIdentity,
+      { _id: identity.socialId as SocialIdentityRef },
+      { limit: 1 }
+    )
+  )[0]
+  if (socialId === undefined || socialId.isDeleted === true || socialId.type !== SocialIdType.EMAIL) return undefined
+
+  const systemToken = generateToken(systemAccountUuid, undefined, { service: MATE_PROVISIONER_SERVICE })
+  const accountClient = getAccountClient(systemToken)
+  const personUuid = await accountClient.findPersonBySocialKey(socialId.key, true)
+  if (personUuid !== identity.account) return undefined
+
+  // Mate accounts are durable identities: changing seed defaults must not silently
+  // replace them and orphan existing direct-message threads.
+  await accountClient.assignWorkspace(socialId.value, control.workspace.uuid, AccountRole.User)
+  return {
+    account: identity.account,
+    socialId: {
+      _id: socialId._id,
+      type: socialId.type,
+      value: socialId.value,
+      key: socialId.key,
+      displayValue: socialId.displayValue,
+      verifiedOn: socialId.verifiedOn,
+      isDeleted: socialId.isDeleted
+    }
+  }
+}
+
 async function ensureLocalIdentity (
   seed: MateIdentitySeed,
   account: AccountUuid,
@@ -316,7 +362,7 @@ export async function provisionMateIdentities (control: TriggerControl): Promise
   const txes: Tx[] = []
   for (const seed of readSeeds(control)) {
     try {
-      const provisioned = await ensureAccount(seed, control.workspace.uuid)
+      const provisioned = (await existingAccount(seed, control)) ?? (await ensureAccount(seed, control.workspace.uuid))
       if (provisioned === undefined) {
         control.ctx.error('Mate account provisioning returned no account', { mateId: seed.mateId })
         continue
