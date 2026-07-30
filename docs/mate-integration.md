@@ -37,6 +37,8 @@ global account, confirms it idempotently, assigns it to the workspace as a
 user, and links the resulting Person, Employee, SocialIdentity, and color
 avatar to `MateIdentity`. Provisioning is retried on user-presence events, so a
 workspace/account propagation delay is self-healing.
+Once linked, a Mate keeps that account and social identity even if seed
+defaults change, preserving existing direct-message membership and history.
 
 ## Orchestrator contract
 
