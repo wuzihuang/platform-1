@@ -267,6 +267,8 @@ async function ensureIdentityDoc (
 
   const localIdentity = await ensureLocalIdentity(seed, provisioned.account, provisioned.socialId, control)
   txes.push(...localIdentity.txes)
+  const tokenRef =
+    `vault://mate/${encodeURIComponent(control.workspace.uuid)}/${encodeURIComponent(seed.mateId)}`
 
   const identity = (await control.findAll(control.ctx, mate.class.MateIdentity, { mate: mateDoc._id }, { limit: 1 }))[0]
 
@@ -275,7 +277,7 @@ async function ensureIdentityDoc (
     account: provisioned.account,
     person: localIdentity.person,
     socialId: localIdentity.socialId,
-    tokenRef: seed.tokenRef,
+    tokenRef,
     provisionedOn: Date.now()
   }
   let identityId = identity?._id
@@ -302,7 +304,7 @@ async function ensureIdentityDoc (
       accountId: provisioned.account,
       personId: localIdentity.person,
       socialId: localIdentity.socialId,
-      tokenRef: seed.tokenRef,
+      tokenRef,
       accountToken: generateMateAccountToken(provisioned.account, control.workspace.uuid)
     },
     control
