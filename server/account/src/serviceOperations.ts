@@ -165,7 +165,7 @@ export async function performWorkspaceOperation (
         update.lastProcessingTime = Date.now() - processingTimeoutMs // To not wait for next step
         break
       case 'archive':
-        if (!isActiveMode(workspace.status.mode)) {
+        if (isActiveMode(workspace.status.mode) === false) {
           throw new PlatformError(unknownError('Archiving allowed only for active workspaces'))
         }
 
@@ -187,7 +187,7 @@ export async function performWorkspaceOperation (
         update.lastProcessingTime = Date.now() - processingTimeoutMs // To not wait for next step
         break
       case 'migrate-to': {
-        if (!isActiveMode(workspace.status.mode)) {
+        if (isActiveMode(workspace.status.mode) === false) {
           return false
         }
         if (params.length !== 1 && params[0] == null) {
@@ -533,7 +533,7 @@ export async function assignWorkspace (
 ): Promise<void> {
   const { email, workspaceUuid, role } = params
   const { extra } = decodeTokenVerbose(ctx, token)
-  if (!['aibot', 'tool', 'workspace'].includes(extra?.service)) {
+  if (!['aibot', 'tool', 'workspace', 'mate-provisioner'].includes(extra?.service)) {
     throw new PlatformError(new Status(Severity.ERROR, platform.status.Forbidden, {}))
   }
 
@@ -932,7 +932,7 @@ export async function findFullSocialIdBySocialKey (
   params: { socialKey: string }
 ): Promise<SocialId | null> {
   const { extra } = decodeTokenVerbose(ctx, token)
-  verifyAllowedServices(['telegram-bot', 'gmail', 'tool', 'workspace', 'google-calendar'], extra)
+  verifyAllowedServices(['telegram-bot', 'gmail', 'tool', 'workspace', 'google-calendar', 'mate-provisioner'], extra)
 
   const { socialKey } = params
 
@@ -999,7 +999,7 @@ export async function findPersonBySocialKey (
 
   const { extra } = decodeTokenVerbose(ctx, token)
 
-  verifyAllowedServices(['tool', 'workspace', 'aibot', ...integrationServices], extra)
+  verifyAllowedServices(['tool', 'workspace', 'aibot', 'mate-provisioner', ...integrationServices], extra)
 
   const socialId = await db.socialId.findOne({ key: socialString })
 

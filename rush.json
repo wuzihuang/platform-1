@@ -2362,6 +2362,41 @@
       "shouldPublish": false
     },
     {
+      "packageName": "@hcengineering/mate",
+      "projectFolder": "plugins/mate",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/mate-assets",
+      "projectFolder": "plugins/mate-assets",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/mate-resources",
+      "projectFolder": "plugins/mate-resources",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/model-mate",
+      "projectFolder": "models/mate",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/model-server-mate",
+      "projectFolder": "models/server-mate",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/server-mate",
+      "projectFolder": "server-plugins/mate",
+      "shouldPublish": false
+    },
+    {
+      "packageName": "@hcengineering/server-mate-resources",
+      "projectFolder": "server-plugins/mate-resources",
+      "shouldPublish": false
+    },
+    {
       "packageName": "@hcengineering/pod-telegram-bot",
       "projectFolder": "services/telegram-bot/pod-telegram-bot",
       "shouldPublish": false

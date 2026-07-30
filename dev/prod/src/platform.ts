@@ -17,6 +17,7 @@ import platform, { type Plugin, addLocation, addStringsLoader, platformId } from
 
 import { activityId } from '@hcengineering/activity'
 import aiBot, { aiBotId } from '@hcengineering/ai-bot'
+import mate, { mateId } from '@hcengineering/mate'
 import analyticsCollector, { analyticsCollectorId } from '@hcengineering/analytics-collector'
 import { attachmentId } from '@hcengineering/attachment'
 import { boardId } from '@hcengineering/board'
@@ -141,6 +142,7 @@ import '@hcengineering/emoji-assets'
 import '@hcengineering/billing-assets'
 import '@hcengineering/huly-mail-assets'
 import '@hcengineering/ai-assistant-assets'
+import '@hcengineering/mate-assets'
 import '@hcengineering/rating-assets'
 
 import { coreId } from '@hcengineering/core'
@@ -179,6 +181,8 @@ export interface Config {
   BRANDING_URL?: string
   TELEGRAM_BOT_URL?: string
   AI_URL?: string
+  MATE_ORCHESTRATOR_URL?: string
+  MATE_ORCHESTRATOR_WS_URL?: string
   DISABLE_SIGNUP?: string
   HIDE_LOCAL_LOGIN?: string
   LINK_PREVIEW_URL?: string
@@ -275,7 +279,7 @@ const PASSWORD_REQUIREMENTS: Record<NonNullable<Config['PASSWORD_STRICTNESS']>, 
   }
 }
 
-function configureI18n(): void {
+function configureI18n (): void {
   // Add localization
   addStringsLoader(
     platformId,
@@ -414,9 +418,14 @@ function configureI18n(): void {
     async (lang: string) => await import(`@hcengineering/ai-assistant-assets/lang/${lang}.json`)
   )
   addStringsLoader(ratingId, async (lang: string) => await import(`@hcengineering/rating-assets/lang/${lang}.json`))
+  addStringsLoader(mateId, async (lang: string) =>
+    lang === 'zh'
+      ? await import('@hcengineering/mate-assets/lang/zh.json')
+      : await import('@hcengineering/mate-assets/lang/en.json')
+  )
 }
 
-export async function configurePlatform() {
+export async function configurePlatform () {
   setMetadata(platform.metadata.LoadHelper, async (loader) => {
     for (let i = 0; i < 5; i++) {
       try {
@@ -492,7 +501,10 @@ export async function configurePlatform() {
   setMetadata(presentation.metadata.MailUrl, config.MAIL_URL)
   setMetadata(presentation.metadata.SignupUrl, config.SIGNUP_URL ?? 'https://huly.io/signup')
 
-  const disabledFeatures = (config.DISABLED_FEATURES ??'').split(',').map(it => it.trim()).filter(it => it.length > 0)
+  const disabledFeatures = (config.DISABLED_FEATURES ?? '')
+    .split(',')
+    .map((it) => it.trim())
+    .filter((it) => it.length > 0)
   setMetadata(presentation.metadata.DisabledFeatures, new Set(disabledFeatures))
 
   setMetadata(recorder.metadata.StreamUrl, config.STREAM_URL)
@@ -516,6 +528,8 @@ export async function configurePlatform() {
   setMetadata(notification.metadata.PushPublicKey, config.PUSH_PUBLIC_KEY)
   setMetadata(analyticsCollector.metadata.EndpointURL, config.ANALYTICS_COLLECTOR_URL)
   setMetadata(aiBot.metadata.EndpointURL, config.AI_URL)
+  setMetadata(mate.metadata.OrchestratorURL, config.MATE_ORCHESTRATOR_URL)
+  setMetadata(mate.metadata.OrchestratorWebSocketURL, config.MATE_ORCHESTRATOR_WS_URL)
 
   setMetadata(github.metadata.GithubApplication, config.GITHUB_APP ?? '')
   setMetadata(github.metadata.GithubClientID, config.GITHUB_CLIENTID ?? '')
@@ -573,7 +587,10 @@ export async function configurePlatform() {
     async () => await import(/* webpackChunkName: "workbench" */ '@hcengineering/workbench-resources')
   )
   addLocation(viewId, async () => await import(/* webpackChunkName: "view" */ '@hcengineering/view-resources'))
-  addLocation(converterId, async () => await import(/* webpackChunkName: "converter" */ '@hcengineering/converter-resources'))
+  addLocation(
+    converterId,
+    async () => await import(/* webpackChunkName: "converter" */ '@hcengineering/converter-resources')
+  )
   addLocation(taskId, async () => await import(/* webpackChunkName: "task" */ '@hcengineering/task-resources'))
   addLocation(contactId, async () => await import(/* webpackChunkName: "contact" */ '@hcengineering/contact-resources'))
   addLocation(chunterId, async () => await import(/* webpackChunkName: "chunter" */ '@hcengineering/chunter-resources'))
@@ -626,6 +643,7 @@ export async function configurePlatform() {
   )
   addLocation(analyticsCollectorId, async () => await import('@hcengineering/analytics-collector-resources'))
   addLocation(aiBotId, async () => await import('@hcengineering/ai-bot-resources'))
+  addLocation(mateId, async () => await import('@hcengineering/mate-resources'))
 
   addLocation(trackerId, async () => await import(/* webpackChunkName: "tracker" */ '@hcengineering/tracker-resources'))
   addLocation(boardId, async () => await import(/* webpackChunkName: "board" */ '@hcengineering/board-resources'))

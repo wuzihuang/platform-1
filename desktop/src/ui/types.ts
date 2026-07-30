@@ -22,6 +22,8 @@ import { IpcRendererEvent } from 'electron'
 export interface Config {
   ACCOUNTS_URL: string
   AI_URL?: string
+  MATE_ORCHESTRATOR_URL?: string
+  MATE_ORCHESTRATOR_WS_URL?: string
   ANALYTICS_COLLECTOR_URL?: string
   BRANDING_URL?: string
   CALENDAR_URL: string
@@ -110,14 +112,14 @@ export const CommandOpenApplication = 'open-application' as const
 export const CommandCloseTab = 'close-tab' as const
 
 export type Command =
-  typeof CommandOpenSettings |
-  typeof CommandOpenInbox |
-  typeof CommandOpenOffice |
-  typeof CommandOpenPlanner |
-  typeof CommandSelectWorkspace |
-  typeof CommandLogout |
-  typeof CommandOpenApplication |
-  typeof CommandCloseTab
+  | typeof CommandOpenSettings
+  | typeof CommandOpenInbox
+  | typeof CommandOpenOffice
+  | typeof CommandOpenPlanner
+  | typeof CommandSelectWorkspace
+  | typeof CommandLogout
+  | typeof CommandOpenApplication
+  | typeof CommandCloseTab
 
 export interface NotificationParams {
   title: string
@@ -150,9 +152,10 @@ export const MenuBarActions = [
   'restore-size',
   'toggle-fullscreen',
   'toggle-minimize-to-tray',
-  'toggle-auto-launch'] as const
+  'toggle-auto-launch'
+] as const
 
-export type MenuBarAction = typeof MenuBarActions[number]
+export type MenuBarAction = (typeof MenuBarActions)[number]
 
 export interface JumpListSpares {
   applications: LaunchApplication[]

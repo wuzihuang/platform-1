@@ -41,6 +41,7 @@ import core, {
 import notification, { type MentionInboxNotification, type NotificationType } from '@hcengineering/notification'
 import { getPerson } from '@hcengineering/server-contact'
 import { type StorageAdapter, type TriggerControl } from '@hcengineering/server-core'
+import { routeMateMentionReference } from '@hcengineering/server-mate-resources'
 import {
   getAllowedProviders,
   getCommonNotificationTxes,
@@ -84,7 +85,15 @@ export async function getPersonNotificationTxes (
     })
   )[0]
 
-  res.push(getUpdateMentionInfoTx(control, reference, space, info))
+  const mentionInfoTx = getUpdateMentionInfoTx(control, reference, space, info)
+  res.push(mentionInfoTx)
+  await routeMateMentionReference(
+    reference,
+    mentionInfoTx.objectId as Ref<UserMentionInfo>,
+    senderId,
+    originTx.modifiedOn,
+    control
+  )
 
   if (
     originTx._class === core.class.TxCreateDoc &&
@@ -179,7 +188,7 @@ function getUpdateMentionInfoTx (
   reference: Data<ActivityReference>,
   space: Ref<Space>,
   info?: UserMentionInfo
-): Tx {
+): TxCUD<UserMentionInfo> {
   if (info === undefined) {
     return control.txFactory.createTxCreateDoc(activity.class.UserMentionInfo, space, {
       attachedTo: reference.attachedDocId ?? reference.srcDocId,

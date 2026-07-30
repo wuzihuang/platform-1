@@ -48,6 +48,7 @@ export interface DiffFileId {
 export default plugin(diffviewId, {
   component: {
     DiffView: '' as AnyComponent,
+    FileDiffView: '' as AnyComponent,
     InlineDiffView: '' as AnyComponent,
     Highlight: '' as AnyComponent
   },

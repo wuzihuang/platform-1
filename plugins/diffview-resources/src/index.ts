@@ -16,12 +16,16 @@
 import { type Resources } from '@hcengineering/platform'
 
 import DiffView from './components/DiffView.svelte'
+import FileDiffView from './components/FileDiffView.svelte'
 import Highlight from './components/Highlight.svelte'
 import InlineDiffView from './components/InlineDiffView.svelte'
+
+export { parseDiff } from './parser'
 
 export default async (): Promise<Resources> => ({
   component: {
     DiffView,
+    FileDiffView,
     InlineDiffView,
     Highlight
   }
