@@ -53,6 +53,8 @@ export class TBrainProfile extends TDoc implements BrainProfile {
   mate!: BrainProfile['mate']
   provider!: string
   model!: string
+  authType!: BrainProfile['authType']
+  credentialRef!: string
   systemPromptRef?: string
 }
 
@@ -62,6 +64,8 @@ export class THarnessProfile extends TDoc implements HarnessProfile {
   harness!: string
   model!: string
   effort!: string
+  allowedRoots!: string[]
+  credentialRef!: string
 }
 
 @Model(mate.class.RunnerNode, core.class.Doc, DOMAIN_MATE)
@@ -140,19 +144,6 @@ export function createModel (builder: Builder): void {
   )
 
   builder.createDoc(
-    mate.class.Mate,
-    core.space.Workspace,
-    { name: 'First Mate', role: 'first', enabled: true },
-    mate.ids.FirstMate
-  )
-  builder.createDoc(
-    mate.class.Mate,
-    core.space.Workspace,
-    { name: 'Second Mate', role: 'second', enabled: true },
-    mate.ids.SecondMate
-  )
-
-  builder.createDoc(
     workbench.class.Widget,
     core.space.Model,
     {
@@ -187,3 +178,4 @@ export function createModel (builder: Builder): void {
 }
 
 export default mate
+export { mateOperation } from './migration'

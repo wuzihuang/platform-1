@@ -31,6 +31,8 @@ export interface BrainProfile extends Doc {
   mate: Ref<Mate>
   provider: string
   model: string
+  authType: 'api-key' | 'oauth'
+  credentialRef: string
   systemPromptRef?: string
 }
 
@@ -39,6 +41,8 @@ export interface HarnessProfile extends Doc {
   harness: string
   model: string
   effort: string
+  allowedRoots: string[]
+  credentialRef: string
 }
 
 export interface RunnerNode extends Doc {
@@ -149,7 +153,11 @@ const mate = plugin(mateId, {
     AgentRuntimeWidget: '' as Ref<Widget>,
     AiTeammatesSettings: '' as Ref<Doc>,
     FirstMate: '' as Ref<Mate>,
-    SecondMate: '' as Ref<Mate>
+    SecondMate: '' as Ref<Mate>,
+    FirstMateBrain: '' as Ref<BrainProfile>,
+    SecondMateBrain: '' as Ref<BrainProfile>,
+    FirstMateHarness: '' as Ref<HarnessProfile>,
+    SecondMateHarness: '' as Ref<HarnessProfile>
   }
 })
 

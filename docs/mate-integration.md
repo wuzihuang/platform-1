@@ -27,7 +27,8 @@ MATE_ORCHESTRATOR_WS_URL=wss://huly.zephwu.com/mate-api
 
 The reverse proxy must preserve WebSocket upgrades below `/mate-api`. Keep
 `MATE_ORCHESTRATOR_SECRET` and identity passwords out of images and source
-control. `tokenRef` is a credential reference; the only account token sent by
+control. The seed `tokenRef` is treated as a namespace hint; provisioning stores
+a workspace-and-Mate-scoped reference. `tokenRef` is a credential reference; the only account token sent by
 the platform is the short-lived, workspace-scoped token delivered over the
 authenticated internal `/identity/provisioned` call.
 
@@ -36,6 +37,8 @@ global account, confirms it idempotently, assigns it to the workspace as a
 user, and links the resulting Person, Employee, SocialIdentity, and color
 avatar to `MateIdentity`. Provisioning is retried on user-presence events, so a
 workspace/account propagation delay is self-healing.
+Once linked, a Mate keeps that account and social identity even if seed
+defaults change, preserving existing direct-message membership and history.
 
 ## Orchestrator contract
 
