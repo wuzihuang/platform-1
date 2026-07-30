@@ -589,7 +589,7 @@ export default function buildModel (): Builder {
         ...config,
         label: config?.label ?? setting.string.Configure,
         hidden: config !== undefined ? config.hidden : true,
-        enabled: (config?.enabled ?? true) && !(config?.hidden ?? false),
+        enabled: (config?.enabled ?? true) === true && (config?.hidden ?? false) !== true,
         beta: config?.beta ?? false
       },
       ('plugin-configuration-' + id) as Ref<PluginConfiguration>

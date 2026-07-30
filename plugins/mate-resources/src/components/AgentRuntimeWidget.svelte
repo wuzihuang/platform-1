@@ -146,8 +146,8 @@
   <header>
     <div class="title">
       <Label label={mate.string.AgentRuntime} />
-      <span class:online={bootstrap.runner?.online} class="presence">
-        {bootstrap.runner?.online ? 'Runner online' : 'Runner offline'}
+      <span class:online={bootstrap.runner?.online === true} class="presence">
+        {bootstrap.runner?.online === true ? 'Runner online' : 'Runner offline'}
       </span>
     </div>
     <select bind:value={selectedRunId} on:change={refresh} aria-label="Runtime run">
@@ -159,7 +159,12 @@
 
   <nav aria-label="Agent runtime views">
     {#each ['terminal', 'console', 'logs', 'diff'] as tab}
-      <button class:active={activeTab === tab} on:click={() => { selectTab(tab) }}>
+      <button
+        class:active={activeTab === tab}
+        on:click={() => {
+          selectTab(tab)
+        }}
+      >
         {tab === 'diff' ? 'Git Diff' : tab[0].toUpperCase() + tab.slice(1)}
       </button>
     {/each}

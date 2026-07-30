@@ -279,7 +279,7 @@ const PASSWORD_REQUIREMENTS: Record<NonNullable<Config['PASSWORD_STRICTNESS']>, 
   }
 }
 
-function configureI18n(): void {
+function configureI18n (): void {
   // Add localization
   addStringsLoader(
     platformId,
@@ -418,16 +418,14 @@ function configureI18n(): void {
     async (lang: string) => await import(`@hcengineering/ai-assistant-assets/lang/${lang}.json`)
   )
   addStringsLoader(ratingId, async (lang: string) => await import(`@hcengineering/rating-assets/lang/${lang}.json`))
-  addStringsLoader(
-    mateId,
-    async (lang: string) =>
-      lang === 'zh'
-        ? await import('@hcengineering/mate-assets/lang/zh.json')
-        : await import('@hcengineering/mate-assets/lang/en.json')
+  addStringsLoader(mateId, async (lang: string) =>
+    lang === 'zh'
+      ? await import('@hcengineering/mate-assets/lang/zh.json')
+      : await import('@hcengineering/mate-assets/lang/en.json')
   )
 }
 
-export async function configurePlatform() {
+export async function configurePlatform () {
   setMetadata(platform.metadata.LoadHelper, async (loader) => {
     for (let i = 0; i < 5; i++) {
       try {
@@ -503,7 +501,10 @@ export async function configurePlatform() {
   setMetadata(presentation.metadata.MailUrl, config.MAIL_URL)
   setMetadata(presentation.metadata.SignupUrl, config.SIGNUP_URL ?? 'https://huly.io/signup')
 
-  const disabledFeatures = (config.DISABLED_FEATURES ??'').split(',').map(it => it.trim()).filter(it => it.length > 0)
+  const disabledFeatures = (config.DISABLED_FEATURES ?? '')
+    .split(',')
+    .map((it) => it.trim())
+    .filter((it) => it.length > 0)
   setMetadata(presentation.metadata.DisabledFeatures, new Set(disabledFeatures))
 
   setMetadata(recorder.metadata.StreamUrl, config.STREAM_URL)
@@ -586,7 +587,10 @@ export async function configurePlatform() {
     async () => await import(/* webpackChunkName: "workbench" */ '@hcengineering/workbench-resources')
   )
   addLocation(viewId, async () => await import(/* webpackChunkName: "view" */ '@hcengineering/view-resources'))
-  addLocation(converterId, async () => await import(/* webpackChunkName: "converter" */ '@hcengineering/converter-resources'))
+  addLocation(
+    converterId,
+    async () => await import(/* webpackChunkName: "converter" */ '@hcengineering/converter-resources')
+  )
   addLocation(taskId, async () => await import(/* webpackChunkName: "task" */ '@hcengineering/task-resources'))
   addLocation(contactId, async () => await import(/* webpackChunkName: "contact" */ '@hcengineering/contact-resources'))
   addLocation(chunterId, async () => await import(/* webpackChunkName: "chunter" */ '@hcengineering/chunter-resources'))

@@ -310,12 +310,10 @@ function configureI18n (): void {
     async (lang: string) => await import(`@hcengineering/ai-assistant-assets/lang/${lang}.json`)
   )
   addStringsLoader(ratingId, async (lang: string) => await import(`@hcengineering/rating-assets/lang/${lang}.json`))
-  addStringsLoader(
-    mateId,
-    async (lang: string) =>
-      lang === 'zh'
-        ? await import('@hcengineering/mate-assets/lang/zh.json')
-        : await import('@hcengineering/mate-assets/lang/en.json')
+  addStringsLoader(mateId, async (lang: string) =>
+    lang === 'zh'
+      ? await import('@hcengineering/mate-assets/lang/zh.json')
+      : await import('@hcengineering/mate-assets/lang/en.json')
   )
 }
 
@@ -370,7 +368,10 @@ export async function configurePlatform (onWorkbenchConnect?: () => Promise<void
   setMetadata(presentation.metadata.HulylakeUrl, config.HULYLAKE_URL ?? '')
   setMetadata(presentation.metadata.PulseUrl, config.PULSE_URL ?? '')
 
-  const disabledFeatures = (config.DISABLED_FEATURES ?? '').split(',').map(it => it.trim()).filter(it => it.length > 0)
+  const disabledFeatures = (config.DISABLED_FEATURES ?? '')
+    .split(',')
+    .map((it) => it.trim())
+    .filter((it) => it.length > 0)
   setMetadata(presentation.metadata.DisabledFeatures, new Set(disabledFeatures))
 
   setMetadata(textEditor.metadata.Collaborator, config.COLLABORATOR ?? '')

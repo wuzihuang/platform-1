@@ -165,7 +165,7 @@ export async function performWorkspaceOperation (
         update.lastProcessingTime = Date.now() - processingTimeoutMs // To not wait for next step
         break
       case 'archive':
-        if (!isActiveMode(workspace.status.mode)) {
+        if (isActiveMode(workspace.status.mode) === false) {
           throw new PlatformError(unknownError('Archiving allowed only for active workspaces'))
         }
 
@@ -187,7 +187,7 @@ export async function performWorkspaceOperation (
         update.lastProcessingTime = Date.now() - processingTimeoutMs // To not wait for next step
         break
       case 'migrate-to': {
-        if (!isActiveMode(workspace.status.mode)) {
+        if (isActiveMode(workspace.status.mode) === false) {
           return false
         }
         if (params.length !== 1 && params[0] == null) {

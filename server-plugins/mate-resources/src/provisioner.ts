@@ -80,7 +80,10 @@ async function confirmAccount (account: PersonUuid, email: string): Promise<void
   }
 }
 
-async function ensureAccount (seed: MateIdentitySeed, workspace: WorkspaceUuid): Promise<ProvisionedAccount | undefined> {
+async function ensureAccount (
+  seed: MateIdentitySeed,
+  workspace: WorkspaceUuid
+): Promise<ProvisionedAccount | undefined> {
   const systemToken = generateToken(systemAccountUuid, undefined, { service: MATE_PROVISIONER_SERVICE })
   const accountClient = getAccountClient(systemToken)
   const socialKey = buildSocialIdString({ type: SocialIdType.EMAIL, value: seed.email })
@@ -189,12 +192,10 @@ async function ensureLocalIdentity (
 
   for (const staleSocialId of staleSocialIds) {
     txes.push(
-      control.txFactory.createTxUpdateDoc(
-        contact.class.SocialIdentity,
-        staleSocialId.space,
-        staleSocialId._id,
-        { isDeleted: true, key: `${staleSocialId.key}:replaced:${String(staleSocialId._id)}` }
-      )
+      control.txFactory.createTxUpdateDoc(contact.class.SocialIdentity, staleSocialId.space, staleSocialId._id, {
+        isDeleted: true,
+        key: `${staleSocialId.key}:replaced:${String(staleSocialId._id)}`
+      })
     )
   }
 
